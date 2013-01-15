@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11-flat.dtd">
+<svg width="1024" height="768" version="1.1" id="Canvas" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <script type="text/ecmascript" xlink:href="helper_functions.js"/>
+ <script  type="text/javascript">
+	<![CDATA[
+
+
+    //preparing the get request
+    var baseUrlGet = "vastbacken.xml";
+    var getDataObj = new getData(baseUrlGet,receiveData,"xml","get",undefined,undefined);
+    getDataObj.url=baseUrlGet;
+    getDataObj.getData();
+
+    function receiveData(node) {
+
+    var markers = node.getElementsByTagName("trkpt");
+    var points = new Array(markers.length);
+    var accDistance = 0;
+    var maxAltitude =  markers[0].getElementsByTagName('*')[0].firstChild.nodeValue;
+    var minAltitude =  markers[0].getElementsByTagName('*')[0].firstChild.nodeValue;
+    var startAltitude =  markers[0].getElementsByTagName('*')[0].firstChild.nodeValue
+    var altitudeSpan;
+    var maxDistance = 0;
+    var profileWidth = 1512;
+    var profileHeight = 256;
+    var extrudeSize = 15;
+
+
+    //Loop to get maxDistance and maxAltitude from data
+    for ( var i = 0; i < markers.length ; i++ )
+    {
+      if(markers[i].getElementsByTagName('*')[0].firstChild.nodeValue > maxAltitude) maxAltitude = markers[i].getElementsByTagName('*')[0].firstChild.nodeValue;
+      if(parseFloat(markers[i].getElementsByTagName('*')[0].firstChild.nodeValue) < minAltitude)
+      {
+
+        minAltitude = markers[i].getElementsByTagName('*')[0].firstChild.nodeValue;
+
+      }
+     if(i > 0){
+           maxDistance += haversine(
+                           markers[i-1].getAttribute("lat"),
+                           markers[i].getAttribute("lat"),
+                           markers[i-1].getAttribute("lon"),
+                           markers[i].getAttribute("lon")
+                           );
+      }
+      
+      markers[i].getElementsByTagName('*')[0].firstChild.nodeValue = (parseFloat(markers[i].getElementsByTagName('*')[0].firstChild.nodeValue) - parseFloat(startAltitude)).toString();
+      
+
+    }
+    
+    alert(minAltitude)
+    
+    altitudeSpan =   parseFloat(maxAltitude) - parseFloat(minAltitude);
+
+    //Add the startpoint for the curve
+    points[0] = "M0 " + (maxAltitude * (profileHeight/altitudeSpan));
+    var prevdistance=0
+
+    for ( var i = 1; i < markers.length ; i++ )
+    {
+      accDistance += haversine(
+                           markers[i-1].getAttribute("lat"),
+                           markers[i].getAttribute("lat"),
+                           markers[i-1].getAttribute("lon"),
+                           markers[i].getAttribute("lon")
+                           );
+      points[i]= " L" +(accDistance) * (profileWidth/maxDistance) + " " + ((altitudeSpan - markers[i].getElementsByTagName('*')[0].firstChild.nodeValue)* (profileHeight/altitudeSpan) - startAltitude);
+
+      var gStop =  document.createElementNS("http://www.w3.org/2000/svg", "stop");
+      gStop.setAttribute("offset",(accDistance * (profileWidth/maxDistance))/profileWidth);
+      gStop.setAttribute("stop-color", getSlope(markers[i-1], markers[i]));
+      document.getElementById("slopeGradient").appendChild(gStop);
+
+
+       
+
+       
+       
+        var shape = document.createElementNS("http://www.w3.org/2000/svg", "path");
+		shape.setAttribute("d",
+                               "M" + (points[i-1] + points[i]).substr(  Math.min(i,2) ) +
+                               " L" +((accDistance) * (profileWidth/maxDistance) - extrudeSize) + " " + ((altitudeSpan - markers[i].getElementsByTagName('*')[0].firstChild.nodeValue - startAltitude)* (profileHeight/altitudeSpan)- extrudeSize) +
+                               " L" +((prevdistance) * (profileWidth/maxDistance) - extrudeSize) + " " + (((altitudeSpan - markers[i-1].getElementsByTagName('*')[0].firstChild.nodeValue - startAltitude)* (profileHeight/altitudeSpan))- extrudeSize)+
+                               "z"
+
+                               );
+		shape.setAttribute("stroke", "#000");
+		shape.setAttribute("stroke-width", "1");
+		shape.setAttribute("fill", getSlope(markers[i-1], markers[i]));
+		shape.setAttribute("opacity", "1.0");
+        //document.getElementById("slopeDetail").appendChild(shape);
+       document.getElementById("slopeDetail").insertBefore(shape,document.getElementById("slopeDetail").firstChild);
+       
+       prevdistance = accDistance
+       
+    }
+    
+    alert((profileHeight + ((startAltitude - (minAltitude)) * (profileHeight/altitudeSpan) ) ))
+
+    document.getElementById("masterProfile").setAttribute("d",
+                                                              points.join("") +
+                                                              " L" + profileWidth + " " + (profileHeight + ((startAltitude - (minAltitude)) * (profileHeight/altitudeSpan) ) ) +
+                                                              " L0 "  + (profileHeight + ((startAltitude + (minAltitude)) * (profileHeight/altitudeSpan) ) ) +
+                                                              + "z"
+                                                              );
+    
+    
+    document.getElementById("masterExtrude").setAttribute("d",
+                                                            points.join("") +
+                                                            " L" + (profileWidth + extrudeSize) + " " + ((altitudeSpan - markers[markers.length-1].getElementsByTagName('*')[0].firstChild.nodeValue)* (profileHeight/maxAltitude)+extrudeSize) +
+                                                            " L" + (profileWidth +extrudeSize) + " " + (profileHeight+extrudeSize) +
+                                                            " L" + (extrudeSize) + " " + (profileHeight+extrudeSize) +
+                                                            "z"
+                                                            );
+    document.getElementById("masterProfile").setAttribute("transform", "translate(80,280)");
+    document.getElementById("slopeDetail").setAttribute("transform", "translate(80,280)");
+    //document.getElementById("masterExtrude").setAttribute("transform", "translate(" + (80-extrudeSize) + "," + (280-extrudeSize) +")");
+    //document.getElementById("layer1").setAttribute("transform", "skewY(-10)");
+
+
+    
+    
+    
+}
+
+function getSlope(marker1, marker2)
+{
+
+      var dist =  haversine(
+                           marker1.getAttribute("lat"),
+                           marker2.getAttribute("lat"),
+                           marker1.getAttribute("lon"),
+                           marker2.getAttribute("lon")
+                           );
+
+      var rad = Math.atan2(dist,(marker2.getElementsByTagName('*')[0].firstChild.nodeValue - marker1.getElementsByTagName('*')[0].firstChild.nodeValue)*0.001);
+      var angle =  parseInt(90 - (180/Math.PI)*rad );
+      return "rgb(" +
+             parseInt(128 + Math.min(angle*16,127)).toString() +
+             "," +
+             "128" +
+             "," +
+             parseInt(Math.min(128+angle*16,127)).toString() +
+             ")"
+
+      
+
+}
+
+function haversine(lat1,lat2,lon1,lon2)
+{
+
+         var R = 6371;
+         var dLat = (lat2-lat1)*(Math.PI / 180);
+         var dLon = (lon2-lon1)*(Math.PI / 180);
+         var a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                 Math.cos(lat1*(Math.PI / 180)) * Math.cos(lat2*(Math.PI / 180)) *
+                 Math.sin(dLon/2) * Math.sin(dLon/2);
+         var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+         var d = R * c;
+         
+
+         return d;
+}
+
+
+
+
+	]]>
+</script>
+<defs>
+    <linearGradient id="slopeGradient" x1="0" x2="1" y1="0" y2="0">
+
+    </linearGradient>
+</defs>
+  <g id="layer1">
+    <path id="masterExtrude" stroke="black" stroke-width="1" fill="#555"  opacity="0"/>
+
+    <g id="slopeDetail">
+          <rect id="dummy"/>
+    </g>
+    <path id="masterProfile" stroke="black" stroke-width="1" fill="#ff0" opacity="1"/>
+  </g>
+</svg>
+
+
+
