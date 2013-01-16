@@ -119,7 +119,7 @@
                    var rad = Math.atan2(climbWatch[0]*1000,climbWatch[1]);
                    var slope =  parseInt(90 - (180/Math.PI)*rad );
                   //Qualify that climb is steep enough
-                  if(slope > 2.7)
+                  if(slope > 2.8)
                   {
 
 
