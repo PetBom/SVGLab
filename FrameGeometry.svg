@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" standalone="no"?>
+<?xml version="1.0" standalone="no"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11-flat.dtd">
 <svg width="1024" height="768" version="1.1" id="Canvas" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
   <script  type="text/javascript">
@@ -292,7 +292,7 @@
     </linearGradient>
   </defs>
   <g onclick="createCircle(evt,this)" onmousemove="drag(evt,this)" onmouseup="drop(evt,this)" id="imageContainer" cursor="crosshair">
-    <image xlink:href="http://blackmaps.files.wordpress.com/2010/04/563px-bart-map-svg.png" width="1024" height="768" opacity="0.0"/>
+    <image xlink:href="http://farm5.staticflickr.com/4082/4931773040_326a38a398_b.jpg" width="1024" height="768" opacity="1.0"/>
     <line id="seatTube" display="none" stroke="#000" stroke-width="1" stroke-dasharray="2,2"/>
     <line id="topTube" display="none" stroke="#000" stroke-width="1" stroke-dasharray="2,2"/>
     <line id="headTube" display="none" stroke="#000" stroke-width="1" stroke-dasharray="2,2"/>
